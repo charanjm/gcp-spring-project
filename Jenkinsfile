@@ -8,9 +8,8 @@ pipeline {
         GCP_PROJECT = 'active-alchemy-459306-v2'     // Your GCP Project ID
         GKE_CLUSTER = 'kube-cluster'                 // Your GKE Cluster Name
         GKE_ZONE = 'us-central1-c'                   // Your GKE Cluster Zone
-        CREDENTIALS_ID = 'kubernetes'                // Jenkins credentials ID for GCP
+        CREDENTIALS_ID = 'e6c902eb-10a2-4994-8ede-60df6289bc0b'  // GCP Credentials ID
         IMAGE_NAME = "gcr.io/${GCP_PROJECT}/gcp-spring-project"  // GCR Image
-        DOCKERHUB_CREDENTIALS = 'dockerhub'          // Jenkins credentials ID for DockerHub
     }
 
     stages {
@@ -46,10 +45,11 @@ pipeline {
             steps {
                 script {
                     // Authenticate with GCP
-                    withCredentials([file(credentialsId: 'gcp-service-account', variable: 'GOOGLE_APPLICATION_CREDENTIALS')]) {
+                    withCredentials([file(credentialsId: CREDENTIALS_ID, variable: 'GOOGLE_APPLICATION_CREDENTIALS')]) {
                         sh '''
                         gcloud auth activate-service-account --key-file=${GOOGLE_APPLICATION_CREDENTIALS}
                         gcloud auth configure-docker gcr.io --quiet
+
                         docker push ${IMAGE_NAME}:${env.BUILD_ID}
                         docker tag ${IMAGE_NAME}:${env.BUILD_ID} ${IMAGE_NAME}:latest
                         docker push ${IMAGE_NAME}:latest
@@ -63,7 +63,7 @@ pipeline {
             steps {
                 script {
                     // Get GKE Credentials
-                    withCredentials([file(credentialsId: 'gcp-service-account', variable: 'GOOGLE_APPLICATION_CREDENTIALS')]) {
+                    withCredentials([file(credentialsId: CREDENTIALS_ID, variable: 'GOOGLE_APPLICATION_CREDENTIALS')]) {
                         sh '''
                         gcloud auth activate-service-account --key-file=${GOOGLE_APPLICATION_CREDENTIALS}
                         gcloud container clusters get-credentials ${GKE_CLUSTER} --zone ${GKE_ZONE} --project ${GCP_PROJECT}
