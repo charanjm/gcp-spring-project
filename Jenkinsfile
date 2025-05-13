@@ -8,7 +8,7 @@ pipeline {
         GCP_PROJECT = 'active-alchemy-459306-v2'     // Your GCP Project ID
         GKE_CLUSTER = 'kube-cluster'                 // Your GKE Cluster Name
         GKE_ZONE = 'us-central1-c'                   // Your GKE Cluster Zone
-        CREDENTIALS_ID = 'e6c902eb-10a2-4994-8ede-60df6289bc0b'  // Your GCP Service Account Credentials ID
+        CREDENTIALS_ID = 'gcp-service-account'       // Your GCP Service Account Credentials ID
         IMAGE_NAME = "gcr.io/${GCP_PROJECT}/gcp-spring-project"  // GCR Image
     }
 
