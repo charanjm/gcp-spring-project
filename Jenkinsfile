@@ -35,8 +35,7 @@ pipeline {
         stage('Docker Build and Push') {
             steps {
                 script {
-                    // Authenticate with GCP
-                    withCredentials([googleServiceAccount(credentialsId: CREDENTIALS_ID)]) {
+                    withCredentials([file(credentialsId: CREDENTIALS_ID, variable: 'GOOGLE_APPLICATION_CREDENTIALS')]) {
                         sh '''
                         gcloud auth activate-service-account --key-file=${GOOGLE_APPLICATION_CREDENTIALS}
                         gcloud auth configure-docker gcr.io --quiet
@@ -55,8 +54,7 @@ pipeline {
         stage('Deploy to GKE') {
             steps {
                 script {
-                    // Get GKE Credentials
-                    withCredentials([googleServiceAccount(credentialsId: CREDENTIALS_ID)]) {
+                    withCredentials([file(credentialsId: CREDENTIALS_ID, variable: 'GOOGLE_APPLICATION_CREDENTIALS')]) {
                         sh '''
                         gcloud auth activate-service-account --key-file=${GOOGLE_APPLICATION_CREDENTIALS}
                         gcloud container clusters get-credentials ${GKE_CLUSTER} --zone ${GKE_ZONE} --project ${GCP_PROJECT}
@@ -90,8 +88,21 @@ pipeline {
 
         always {
             echo "Cleaning up local Docker images..."
-            sh "docker rmi ${IMAGE_NAME}:${env.BUILD_ID} || true"
-            sh "docker rmi ${IMAGE_NAME}:latest || true"
+            script {
+                def imageList = sh(returnStdout: true, script: "docker images -q ${IMAGE_NAME}:${env.BUILD_ID}").trim()
+                if (imageList) {
+                    sh "docker rmi ${IMAGE_NAME}:${env.BUILD_ID} || true"
+                } else {
+                    echo "Image ${IMAGE_NAME}:${env.BUILD_ID} does not exist locally, skipping cleanup."
+                }
+
+                imageList = sh(returnStdout: true, script: "docker images -q ${IMAGE_NAME}:latest").trim()
+                if (imageList) {
+                    sh "docker rmi ${IMAGE_NAME}:latest || true"
+                } else {
+                    echo "Image ${IMAGE_NAME}:latest does not exist locally, skipping cleanup."
+                }
+            }
         }
     }
 }
