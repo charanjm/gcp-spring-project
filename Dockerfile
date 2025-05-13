@@ -4,8 +4,9 @@ FROM openjdk:17-jdk-alpine
 # Set the working directory
 WORKDIR /app
 
-# Copy the project jar file
-COPY target/gcp-spring-project-0.0.1-SNAPSHOT.jar app.jar
+# Copy the project jar file (using wildcard for flexibility)
+ARG JAR_FILE=target/*.jar
+COPY ${JAR_FILE} app.jar
 
 # Expose the application port
 EXPOSE 8080
