@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gcp-spring-deployment
+  labels:
+    app: gcp-spring
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: gcp-spring
+  template:
+    metadata:
+      labels:
+        app: gcp-spring
+    spec:
+      containers:
+        - name: gcp-spring
+          image: gcr.io/your-gcp-project-id/gcp-spring-project:latest
+          ports:
+            - containerPort: 8080
