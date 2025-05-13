@@ -35,14 +35,17 @@ pipeline {
         stage('Docker Build and Push') {
             steps {
                 script {
+                    // Ensure the correct credentials are being used for GCP authentication
                     withCredentials([file(credentialsId: CREDENTIALS_ID, variable: 'GOOGLE_APPLICATION_CREDENTIALS')]) {
                         sh '''
                         gcloud auth activate-service-account --key-file=${GOOGLE_APPLICATION_CREDENTIALS}
                         gcloud auth configure-docker gcr.io --quiet
 
+                        // Build Docker image and push it to GCR
                         docker build -t ${IMAGE_NAME}:${env.BUILD_ID} .
                         docker push ${IMAGE_NAME}:${env.BUILD_ID}
 
+                        // Tag and push the image as "latest"
                         docker tag ${IMAGE_NAME}:${env.BUILD_ID} ${IMAGE_NAME}:latest
                         docker push ${IMAGE_NAME}:latest
                         '''
@@ -54,6 +57,7 @@ pipeline {
         stage('Deploy to GKE') {
             steps {
                 script {
+                    // Ensure the correct credentials are used for interacting with GKE
                     withCredentials([file(credentialsId: CREDENTIALS_ID, variable: 'GOOGLE_APPLICATION_CREDENTIALS')]) {
                         sh '''
                         gcloud auth activate-service-account --key-file=${GOOGLE_APPLICATION_CREDENTIALS}
@@ -67,7 +71,7 @@ pipeline {
                         sh "sed -i 's|gcr.io/.*/gcp-spring-project:.*|${IMAGE_NAME}:${env.BUILD_ID}|' ${file}"
                     }
 
-                    // Apply Kubernetes manifests
+                    // Apply Kubernetes manifests to deploy the app
                     sh '''
                     kubectl apply -f kubernetes/deployment.yaml
                     kubectl apply -f kubernetes/service.yaml
