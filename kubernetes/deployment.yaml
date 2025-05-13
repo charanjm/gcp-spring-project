@@ -16,6 +16,6 @@ spec:
     spec:
       containers:
         - name: gcp-spring
-          image: gcr.io/your-gcp-project-id/gcp-spring-project:latest
+          image: gcr.io/your-gcp-project-id/gcp-spring-project:latest  # This will be replaced dynamically
           ports:
             - containerPort: 8080
