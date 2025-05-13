@@ -8,7 +8,7 @@ pipeline {
         GCP_PROJECT = 'active-alchemy-459306-v2'     // Your GCP Project ID
         GKE_CLUSTER = 'kube-cluster'                 // Your GKE Cluster Name
         GKE_ZONE = 'us-central1-c'                   // Your GKE Cluster Zone
-        CREDENTIALS_ID = 'e6c902eb-10a2-4994-8ede-60df6289bc0b'  // GCP Credentials ID
+        CREDENTIALS_ID = 'e6c902eb-10a2-4994-8ede-60df6289bc0b'  // Your GCP Service Account Credentials ID
         IMAGE_NAME = "gcr.io/${GCP_PROJECT}/gcp-spring-project"  // GCR Image
     }
 
@@ -32,25 +32,18 @@ pipeline {
             }
         }
 
-        stage('Docker Build') {
-            steps {
-                script {
-                    // Building the Docker image with Build ID
-                    myimage = docker.build("${IMAGE_NAME}:${env.BUILD_ID}")
-                }
-            }
-        }
-
-        stage('Push Docker Image to GCR') {
+        stage('Docker Build and Push') {
             steps {
                 script {
                     // Authenticate with GCP
-                    withCredentials([file(credentialsId: CREDENTIALS_ID, variable: 'GOOGLE_APPLICATION_CREDENTIALS')]) {
+                    withCredentials([googleServiceAccount(credentialsId: CREDENTIALS_ID)]) {
                         sh '''
                         gcloud auth activate-service-account --key-file=${GOOGLE_APPLICATION_CREDENTIALS}
                         gcloud auth configure-docker gcr.io --quiet
 
+                        docker build -t ${IMAGE_NAME}:${env.BUILD_ID} .
                         docker push ${IMAGE_NAME}:${env.BUILD_ID}
+
                         docker tag ${IMAGE_NAME}:${env.BUILD_ID} ${IMAGE_NAME}:latest
                         docker push ${IMAGE_NAME}:latest
                         '''
@@ -63,7 +56,7 @@ pipeline {
             steps {
                 script {
                     // Get GKE Credentials
-                    withCredentials([file(credentialsId: CREDENTIALS_ID, variable: 'GOOGLE_APPLICATION_CREDENTIALS')]) {
+                    withCredentials([googleServiceAccount(credentialsId: CREDENTIALS_ID)]) {
                         sh '''
                         gcloud auth activate-service-account --key-file=${GOOGLE_APPLICATION_CREDENTIALS}
                         gcloud container clusters get-credentials ${GKE_CLUSTER} --zone ${GKE_ZONE} --project ${GCP_PROJECT}
