@@ -35,7 +35,7 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    myimage = docker.build("chaja6r/devops:${env.BUILD_ID}")
+                   def myimage = docker.build("gcr.io/active-alchemy-459306-v2/gcp-spring-project:${BUILD_NUMBER}")
                 }
             }
         }
