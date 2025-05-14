@@ -32,23 +32,21 @@ pipeline {
             }
         }
 
-        stage('Docker Build and Push') {
+        stage('Build Docker Image') {
             steps {
                 script {
-                    
-                    withCredentials([file(credentialsId: CREDENTIALS_ID, variable: 'GOOGLE_APPLICATION_CREDENTIALS')]) {
-                        sh '''
-                        gcloud auth activate-service-account --key-file=${GOOGLE_APPLICATION_CREDENTIALS}
-                        gcloud auth configure-docker gcr.io --quiet
+                    myimage = docker.build("chaja6r/devops:${env.BUILD_ID}")
+                }
+            }
+        }
 
-                        
-                        docker build -t ${IMAGE_NAME}:${env.BUILD_ID} .
-                        docker push ${IMAGE_NAME}:${env.BUILD_ID}
-
-                        
-                        docker tag ${IMAGE_NAME}:${env.BUILD_ID} ${IMAGE_NAME}:latest
-                        docker push ${IMAGE_NAME}:latest
-                        '''
+        stage('Push Docker Image') {
+            steps {
+                script {
+                    withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                        sh "docker login -u ${DOCKER_USER} -p ${DOCKER_PASS}"
+                        myimage.push("${env.BUILD_ID}")
+                        myimage.push("latest")
                     }
                 }
             }
