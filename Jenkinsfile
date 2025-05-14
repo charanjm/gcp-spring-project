@@ -5,11 +5,11 @@ pipeline {
     }
 
     environment {
-        GCP_PROJECT = 'active-alchemy-459306-v2'     // Your GCP Project ID
-        GKE_CLUSTER = 'kube-cluster'                 // Your GKE Cluster Name
-        GKE_ZONE = 'us-central1-c'                   // Your GKE Cluster Zone
-        CREDENTIALS_ID = 'gcp-service-account'       // Your GCP Service Account Credentials ID
-        IMAGE_NAME = "gcr.io/${GCP_PROJECT}/gcp-spring-project"  // GCR Image
+        GCP_PROJECT = 'active-alchemy-459306-v2'     
+        GKE_CLUSTER = 'kube-cluster'                 
+        GKE_ZONE = 'us-central1-c'                   
+        CREDENTIALS_ID = 'gcp-service-account'       
+        IMAGE_NAME = "gcr.io/${GCP_PROJECT}/gcp-spring-project"  
     }
 
     stages {
@@ -35,17 +35,17 @@ pipeline {
         stage('Docker Build and Push') {
             steps {
                 script {
-                    // Ensure the correct credentials are being used for GCP authentication
+                    
                     withCredentials([file(credentialsId: CREDENTIALS_ID, variable: 'GOOGLE_APPLICATION_CREDENTIALS')]) {
                         sh '''
                         gcloud auth activate-service-account --key-file=${GOOGLE_APPLICATION_CREDENTIALS}
                         gcloud auth configure-docker gcr.io --quiet
 
-                        // Build Docker image and push it to GCR
+                        
                         docker build -t ${IMAGE_NAME}:${env.BUILD_ID} .
                         docker push ${IMAGE_NAME}:${env.BUILD_ID}
 
-                        // Tag and push the image as "latest"
+                        
                         docker tag ${IMAGE_NAME}:${env.BUILD_ID} ${IMAGE_NAME}:latest
                         docker push ${IMAGE_NAME}:latest
                         '''
@@ -57,7 +57,6 @@ pipeline {
         stage('Deploy to GKE') {
             steps {
                 script {
-                    // Ensure the correct credentials are used for interacting with GKE
                     withCredentials([file(credentialsId: CREDENTIALS_ID, variable: 'GOOGLE_APPLICATION_CREDENTIALS')]) {
                         sh '''
                         gcloud auth activate-service-account --key-file=${GOOGLE_APPLICATION_CREDENTIALS}
@@ -65,13 +64,13 @@ pipeline {
                         '''
                     }
 
-                    // Update Kubernetes manifests with the new image version
+                    
                     def files = ['kubernetes/deployment.yaml', 'kubernetes/service.yaml']
                     files.each { file ->
                         sh "sed -i 's|gcr.io/.*/gcp-spring-project:.*|${IMAGE_NAME}:${env.BUILD_ID}|' ${file}"
                     }
 
-                    // Apply Kubernetes manifests to deploy the app
+                    
                     sh '''
                     kubectl apply -f kubernetes/deployment.yaml
                     kubectl apply -f kubernetes/service.yaml
